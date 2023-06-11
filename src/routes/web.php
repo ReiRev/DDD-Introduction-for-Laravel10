@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Models\User;
+use App\Services\UserService;
 
 /*
 |--------------------------------------------------------------------------
@@ -15,8 +16,15 @@ use App\Models\User;
 */
 
 Route::get('/', function () {
-    $user1 = User::create(['name' => 'Rei Rev']);
-    $user2 = User::create(['name' => 'Rei Rev']);
-    dd($user1 == $user2);
+    $reirev = new User(['name' => 'Rei Rev']);
+    $reirev->save();
+
+    $foo = new User(['name' => 'foo']);
+
+    $userService = new UserService();
+    dd(
+        $userService->exists($reirev),
+        $userService->exists($foo)
+    );
     return view('welcome');
 });
