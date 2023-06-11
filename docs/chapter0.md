@@ -1,4 +1,4 @@
-# Chapter 0: Laravel及びDocker環境のセットアップ
+# Laravel及びDocker環境のセットアップ
 
 まずは、LaravelとDockerの開発環境を構築していきましょう。
 
