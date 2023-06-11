@@ -1,16 +1,18 @@
-# chapter 0: Laravel及びDocker環境のセットアップ
+# Chapter 0: Laravel及びDocker環境のセットアップ
 
-以下でlaravel v10.0のプロジェクトをsrcフォルダ内に作成。
+まずは、LaravelとDockerの開発環境を構築していきましょう。
+
+以下でlaravel v10.0のプロジェクトをsrcフォルダ内に作成します。
 
 ```[bash]
 composer create-project laravel/laravel src 10.0 --prefer-dist
 ```
 
-srcフォルダに移動し、sailをインストールする。
-これにより、Docker上での作業を行うとができる。
+srcフォルダに移動し、sailをインストールします。
+これにより、Docker上での作業を行うとができます。
 また、`php artisan sail:install --devcontainer`で`--devcontainer`オプションをつけることにより、
-Visual Studio Codeの[Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)の設定フォルダが`src/.devcontainer`に作成される。
-これにより、開発がかなり便利になる。
+Visual Studio Codeの[Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)の設定フォルダが`src/.devcontainer`に作成されます。
+これにより、開発がかなり便利になります。
 
 ```[bash]
 cd src
@@ -18,7 +20,7 @@ composer require laravel/sail --dev
 php artisan sail:install --devcontainer
 ```
 
-rootディレクトリに戻り、srcディレクトリをVisual Studio Codeで開き直す。
+rootディレクトリに戻り、srcディレクトリをVisual Studio Codeで開き直します。
 
 ```[bash]
 cd ..
