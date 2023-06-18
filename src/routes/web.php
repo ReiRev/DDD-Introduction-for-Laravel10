@@ -16,15 +16,5 @@ use App\Services\UserService;
 */
 
 Route::get('/', function () {
-    $reirev = new User(['name' => 'Rei Rev']);
-    $reirev->save();
-
-    $foo = new User(['name' => 'foo']);
-
-    $userService = new UserService();
-    dd(
-        $userService->exists($reirev),
-        $userService->exists($foo)
-    );
     return view('welcome');
 });
