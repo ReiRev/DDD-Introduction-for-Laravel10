@@ -14,5 +14,18 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', function () {
+    $name1 = new FullName('Rei', 'Rev');
+    $name2 = new FullName('Rei', 'Rev');
+    $name3 = new FullName('Foo', 'Bar');
+    dd(
+        $name1,
+        $name1->equals($name2),
+        $name1->equals($name3),
+        $name1 == 'Rei Rev',
+        $name1 == $name2,
+        $name1 == $name3,
+        $name1 === $name2,
+        $name1 === $name3
+    );
     return view('welcome');
 });
