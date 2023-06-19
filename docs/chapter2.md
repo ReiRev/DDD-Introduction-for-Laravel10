@@ -4,9 +4,181 @@
 
 あらかじめ、`src`フォルダをVisual Studio Codeで開き、Command Paletteの`Dev Containers: Reopen in Container`でDocker環境に入っておきます。
 
-## 値オブジェクトの作成
+## 値オブジェクトの作成(Custom Castsの使用)
 
-### Laravel Value Objectsのインストール
+以前書いた記述では、Laravelにデフォルトでは含まれていない[Value Objects]((https://github.com/michael-rubel/laravel-value-objects))パッケージを用いて値オブジェクトを作成していました。
+しかしながら、built-inで使用できる[Custom Casts](https://laravel.com/docs/10.x/eloquent-mutators#custom-casts)の方が簡潔で便利であることが判明したので、ここではCustom Castsを用いた値オブジェクトの実装方法を説明します。
+
+### LaravelのCustom Castsとは？
+
+LaravelのCustom Castsを用いると、Eloquent Modelのattributeに対して型を指定することができます。
+[ドキュメントの例](https://laravel.com/docs/10.x/eloquent-mutators#custom-casts)を参考に、使用例を見てみましょう。
+
+```php:app/Casts/Json
+<?php
+ 
+namespace App\Casts;
+ 
+use Illuminate\Contracts\Database\Eloquent\CastsAttributes;
+use Illuminate\Database\Eloquent\Model;
+ 
+class Json implements CastsAttributes
+{
+    /**
+     * Cast the given value.
+     *
+     * @param  array<string, mixed>  $attributes
+     * @return array<string, mixed>
+     */
+    public function get(Model $model, string $key, mixed $value, array $attributes): array
+    {
+        return json_decode($value, true);
+    }
+ 
+    /**
+     * Prepare the given value for storage.
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    public function set(Model $model, string $key, mixed $value, array $attributes): string
+    {
+        return json_encode($value);
+    }
+}
+```
+
+```php:app/Models/User.php
+<?php
+ 
+namespace App\Models;
+ 
+use App\Casts\Json;
+use Illuminate\Database\Eloquent\Model;
+ 
+class User extends Model
+{
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array
+     */
+    protected $casts = [
+        'options' => Json::class,
+    ];
+}
+```
+
+上記のように、Custom CastsはCastsAttributesを継承し、getおよびsetメソッドを実装する必要があります。
+getはデータベースの生値を変換する役割を、setは引数をデータベースの生値に変換する役割を持ちます。
+作成したCustom Castのクラスを、使用するModelのcastsプロパティに渡してあげると、Modelのコンストラクタでgetが呼び出されます。
+
+### UserNameのCustom Castによる作成
+
+以下のコマンドで、UserName Castを作成できます。
+
+```bash
+php artisan make:cast UserName
+```
+
+少し先取りになりますが、後で使用する[書籍](https://www.amazon.co.jp/%E3%83%89%E3%83%A1%E3%82%A4%E3%83%B3%E9%A7%86%E5%8B%95%E8%A8%AD%E8%A8%88%E5%85%A5%E9%96%80-%E3%83%9C%E3%83%88%E3%83%A0%E3%82%A2%E3%83%83%E3%83%97%E3%81%A7%E3%82%8F%E3%81%8B%E3%82%8B%EF%BC%81%E3%83%89%E3%83%A1%E3%82%A4%E3%83%B3%E9%A7%86%E5%8B%95%E8%A8%AD%E8%A8%88%E3%81%AE%E5%9F%BA%E6%9C%AC-%E6%88%90%E7%80%AC-%E5%85%81%E5%AE%A3-ebook/dp/B082WXZVPC?__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A&crid=2SPIX3DU2EUW2&keywords=%E3%83%89%E3%83%A1%E3%82%A4%E3%83%B3%E9%A7%86%E5%8B%95%E8%A8%AD%E8%A8%88%E5%85%A5%E9%96%80&qid=1686451938&sprefix=%E3%83%89%E3%83%A1%E3%82%A4%E3%83%B3%E9%A7%86%E5%8B%95%E8%A8%AD%E8%A8%88%E3%81%AB%E3%82%85%E3%81%86%E3%82%82n%2Caps%2C700&sr=8-1&linkCode=ll1&tag=reirev0e-22&linkId=921753cd089b48613204b35f1d241358&language=ja_JP&ref_=as_li_ss_tl)リスト6.2を参考にUserNameクラスを以下のように作成します。
+
+```php:app/Casts/UserName.php
+<?php
+
+namespace App\Casts;
+
+use Illuminate\Contracts\Database\Eloquent\CastsAttributes;
+use Illuminate\Database\Eloquent\Model;
+
+class UserName implements CastsAttributes
+{
+    /**
+     * Cast the given value.
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    public function get(Model $model, string $key, mixed $value, array $attributes): mixed
+    {
+        return $value;
+    }
+
+    /**
+     * Prepare the given value for storage.
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    public function set(Model $model, string $key, mixed $value, array $attributes): mixed
+    {
+        if (!is_string($value)) {
+            throw new \InvalidArgumentException('The value ' . $value . ' must be string.');
+        }
+        if (empty($value)) {
+            throw new \InvalidArgumentException('The value must have value.');
+        }
+        if (strlen($value) < 3) {
+            throw new \InvalidArgumentException('The value must have 3 or more characters.');
+        }
+        if (strlen($value) > 20) {
+            throw new \InvalidArgumentException('The value must have 20 or less characters.');
+        }
+        return $value;
+    }
+}
+```
+
+### UserIdのCustom Castによる作成
+
+以下のコマンドで、UserName Castを作成できます。
+
+```bash
+php artisan make:cast UserId
+```
+
+先ほどと同様に、[書籍](https://www.amazon.co.jp/%E3%83%89%E3%83%A1%E3%82%A4%E3%83%B3%E9%A7%86%E5%8B%95%E8%A8%AD%E8%A8%88%E5%85%A5%E9%96%80-%E3%83%9C%E3%83%88%E3%83%A0%E3%82%A2%E3%83%83%E3%83%97%E3%81%A7%E3%82%8F%E3%81%8B%E3%82%8B%EF%BC%81%E3%83%89%E3%83%A1%E3%82%A4%E3%83%B3%E9%A7%86%E5%8B%95%E8%A8%AD%E8%A8%88%E3%81%AE%E5%9F%BA%E6%9C%AC-%E6%88%90%E7%80%AC-%E5%85%81%E5%AE%A3-ebook/dp/B082WXZVPC?__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A&crid=2SPIX3DU2EUW2&keywords=%E3%83%89%E3%83%A1%E3%82%A4%E3%83%B3%E9%A7%86%E5%8B%95%E8%A8%AD%E8%A8%88%E5%85%A5%E9%96%80&qid=1686451938&sprefix=%E3%83%89%E3%83%A1%E3%82%A4%E3%83%B3%E9%A7%86%E5%8B%95%E8%A8%AD%E8%A8%88%E3%81%AB%E3%82%85%E3%81%86%E3%82%82n%2Caps%2C700&sr=8-1&linkCode=ll1&tag=reirev0e-22&linkId=921753cd089b48613204b35f1d241358&language=ja_JP&ref_=as_li_ss_tl)リスト6.2を参考にUserIdクラスを作成します。
+
+```php:app/Casts/UserId.php
+<?php
+
+namespace App\Casts;
+
+use Illuminate\Contracts\Database\Eloquent\CastsAttributes;
+use Illuminate\Database\Eloquent\Model;
+
+class UserId implements CastsAttributes
+{
+    /**
+     * Cast the given value.
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    public function get(Model $model, string $key, mixed $value, array $attributes): mixed
+    {
+        return $value;
+    }
+
+    /**
+     * Prepare the given value for storage.
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    public function set(Model $model, string $key, mixed $value, array $attributes): mixed
+    {
+        if (!is_string($value)) {
+            throw new \InvalidArgumentException('The value ' . $value . ' must be string.');
+        }
+        if (empty($value)) {
+            throw new \InvalidArgumentException('The value must have value.');
+        }
+        return $value;
+    }
+}
+```
+
+## ~~値オブジェクトの作成(Value Objects)~~
+
+以下はValue Objectsパッケージを用いた方法です。おすすめではありませんが、過去の記録として残しておきます。
+
+### ~~Laravel Value Objectsのインストール~~
 
 すでにLaravelで値オブジェクトの作成を簡単に行う[パッケージ](https://github.com/michael-rubel/laravel-value-objects)を作成している方がいますので、それをありがたく利用させてもらいます。
 以下でパッケージをインストールします。
@@ -15,7 +187,7 @@
 composer require michael-rubel/laravel-value-objects
 ```
 
-### FullNameクラスの作成
+### ~~FullNameクラスの作成~~
 
 書籍に倣い、FullNameクラスの実装を行なっていきます。
 
@@ -188,7 +360,7 @@ public function equals(ValueObject $object): bool
 }
 ```
 
-## 実装の確認
+## ~~実装の確認~~
 
 本来はテストコードを書くのが良いですが、テストを書く章は別に存在していますので、ここでは簡単に実装ができているかどうかを確認してみます。
 
