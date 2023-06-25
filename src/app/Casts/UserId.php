@@ -2,8 +2,10 @@
 
 namespace App\Casts;
 
+use App\ValueObjects\UserId as UserIdValueObject;
 use Illuminate\Contracts\Database\Eloquent\CastsAttributes;
 use Illuminate\Database\Eloquent\Model;
+use InvalidArgumentException;
 
 class UserId implements CastsAttributes
 {
@@ -14,7 +16,7 @@ class UserId implements CastsAttributes
      */
     public function get(Model $model, string $key, mixed $value, array $attributes): mixed
     {
-        return $value;
+        return UserIdValueObject($value);
     }
 
     /**
@@ -24,12 +26,14 @@ class UserId implements CastsAttributes
      */
     public function set(Model $model, string $key, mixed $value, array $attributes): mixed
     {
-        if (!is_string($value)) {
-            throw new \InvalidArgumentException('The value ' . $value . ' must be string.');
+        if (!$value instanceof UserIdValueObject) {
+            throw new InvalidArgumentException(
+                'The given value is not a UserId Object.'
+            );
         }
-        if (empty($value)) {
-            throw new \InvalidArgumentException('The value must have value.');
-        }
-        return $value;
+
+        return [
+            'user_id' => $value->toString()
+        ];
     }
 }
