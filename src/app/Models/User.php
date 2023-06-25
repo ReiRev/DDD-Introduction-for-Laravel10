@@ -2,24 +2,24 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Casts\UserName as UserNameCast;
 use App\Casts\UserId as UserIdCast;
 
+use App\Casts\UserName as UserNameCast;
+
 class User extends Model
 {
     use HasFactory;
+    use HasUuids;
 
-    protected $fillable = ['name', 'id'];
-
-    protected $casts = [
-        'id' => UserIdCast::class,
-        'name' => UserNameCast::class
+    protected $fillable = [
+        'username'
     ];
 
-    // public function equals(User $user): bool
-    // {
-    //     return this->id == $user->id;
-    // }
+    protected $casts = [
+        'username' => UserNameCast::class
+    ];
 }
