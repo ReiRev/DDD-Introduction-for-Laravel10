@@ -16,7 +16,7 @@ class UserName implements CastsAttributes
      */
     public function get(Model $model, string $key, mixed $value, array $attributes): mixed
     {
-        return UserNameValueObject($value);
+        return new UserNameValueObject($value);
     }
 
     /**
