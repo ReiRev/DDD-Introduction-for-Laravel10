@@ -24,6 +24,7 @@
 例えば以下のようにexistsメソッドを使用することができます。
 適宜`php artisan migrate:fresh`でデータベースをリセットして、実行結果を確認してみてください。
 
+
 ```php:routes/web.php
 <?php
 
