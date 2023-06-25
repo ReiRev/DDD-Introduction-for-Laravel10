@@ -259,7 +259,6 @@ class UserTest extends TestCase
 
 `use RefreshDatabase;`をクラス内に記述しておくことで、各テストごとに、すなわち各テストの関数の実行ごとに[データベースがリセットされます](https://laravel.com/docs/10.x/database-testing#resetting-the-database-after-each-test)。
 
-
 以下でテストを実行し、問題なくテストが動作することを確認します。
 
 ```bash
