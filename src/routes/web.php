@@ -1,8 +1,6 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Models\User;
-use App\Services\UserService;
 
 /*
 |--------------------------------------------------------------------------
@@ -16,15 +14,5 @@ use App\Services\UserService;
 */
 
 Route::get('/', function () {
-    $reirev = new User(['name' => 'Rei Rev']);
-    $reirev->save();
-
-    $foo = new User(['name' => 'foo']);
-
-    $userService = new UserService();
-    dd(
-        $userService->exists($reirev),
-        $userService->exists($foo)
-    );
     return view('welcome');
 });
