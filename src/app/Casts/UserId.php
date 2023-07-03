@@ -16,7 +16,7 @@ class UserId implements CastsAttributes
      */
     public function get(Model $model, string $key, mixed $value, array $attributes): mixed
     {
-        return UserIdValueObject($value);
+        return new UserIdValueObject($value);
     }
 
     /**

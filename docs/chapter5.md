@@ -92,17 +92,129 @@ Duration: 0.82s
 </phpunit>
 ```
 
+### UserName 値オブジェクトのテスト
+
+[Chapter 2](https://qiita.com/reirev2913/items/1ca692571ca6ffb2f1f9)で作成したUserName 値オブジェクトの動作確認を簡易なもので済ませてしまっていたので、書籍に記載はありませんが、ここでしっかりとテストを作成しておきましょう。
+
+以下でテストを作成します。
+
+```bash
+php artisan make:test UserNameTest
+```
+
+ここでは、テストをfeature testとして作成しています。
+プロジェクトでデフォルトで作成されているように、Laravelのテストフォルダは`tests/Unit`と`tests/Feature`の2つが用意されています。
+`make:test`で`-u`オプションをつけると、`tests/Unit`フォルダの方にテストが作成されますが、特に指定しない場合は`tests/Feature`フォルダの方に作成されます。
+一般的に、ユニットテストでは1つのクラスのみをテスト対象とする場合に使用し、フィーチャーテストは複数のクラスが使用される複雑なテストを対象とする場合に使用します。
+ここで、値オブジェクトは他のクラスやデータベースには依存しないと判断して、ユニットテストを作成すると問題が生じます。
+Laravelのテストでは、Facade(Laravelの機能群)を使用する場合はfeature test、しない場合はunit testで使い分けます。
+デフォルトではunit testでFacadeが使われない設定になっているため、Facadeを使用するか否かでテストディレクトリを分けた方がいいでしょう。
+今回の値オブジェクトはFacadeを使用しているので、フィーチャーテストとして作成します。
+
+作成された`tests/Feature/UserNameTest.php`を以下のように編集します。
+
+```php:tests/Feature/UserNameTest.php
+<?php
+
+namespace Tests\Feature;
+
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\WithFaker;
+use Tests\TestCase;
+
+use App\ValueObjects\UserName;
+
+use Exception;
+
+class UserNameTest extends TestCase
+{
+    public function test_empty_input(): void
+    {
+        $this->expectException(Exception::class);
+        new UserName('');
+    }
+
+    public function shortNames(): array
+    {
+        return [
+            ['a'],
+            ['ab']
+        ];
+    }
+
+    /**
+     * @dataProvider shortNames
+     */
+    public function test_short_name(string $name): void
+    {
+        $this->expectException(Exception::class);
+        new UserName($name);
+    }
+
+    public function longNames(): array
+    {
+        return [
+            ['UE69KHLM3Q8BzwM6ZDAYa'], // 21 letters
+            ['UE69KHLM3Q8BzwM6ZDAYad'], // 22 letters
+        ];
+    }
+
+    /**
+     * @dataProvider longNames
+     */
+    public function test_long_name(string $name): void
+    {
+        $this->expectException(Exception::class);
+        new UserName($name);
+    }
+
+    public function validNames(): array
+    {
+        return [
+            ['ReiRev'],
+            ['abc'], // 3 letters
+            ['eFaNtc7hZMRXn8Ud7y2g'], // 20 letters
+            ['れいれぶ']
+        ];
+    }
+
+    /**
+     * @dataProvider validNames
+     */
+    public function test_valid_name(string $name): void
+    {
+        $username = new UserName($name);
+        $this->assertEquals($name, $username->toString());
+        $this->assertEquals($name, $username->value());
+        $this->assertEquals(['username' => $name], $username->toArray());
+    }
+}
+
+```
+
+いくつかピックアップして内容を見ていきましょう。
+テストを実行する関数は、publicな関数にし、名前は`test_*`とするようにします。
+基本的には`$this->assertEquals`を使用して、ある値が所望の値かどうかをチェックします(`test_valid_name`関数など)。
+もし、エラーが生じるかどうかを確かめたい場合には、エラーが生じる箇所の前に`$this->expectException(Exception::class);`を書いておけば良いです。
+`Exception`のインポートは忘れずにしておきましょう。
+
+また、複数の入力パターンに対してテストを実行したい場合には、PHP Unit Testの[data provider](https://phpunit.de/manual/3.7/en/appendixes.annotations.html#appendixes.annotations.dataProvider)を使用することができます。
+まず、複数の入力パターンを`shortNames`のように関数の形で定義し、それを入力として受けるテストの関数(ここでは`test_short_name`)に、`@dataProvider shortNames`のようなアノテーションをつけることで、複数の入力に対するテストを記述することができます。
+
+`php artisan test`で、テストが全てパスすることを確認しましょう。
+
 ### ユーザー作成処理のテスト
 
 [書籍リスト5.17](https://www.amazon.co.jp/%E3%83%89%E3%83%A1%E3%82%A4%E3%83%B3%E9%A7%86%E5%8B%95%E8%A8%AD%E8%A8%88%E5%85%A5%E9%96%80-%E3%83%9C%E3%83%88%E3%83%A0%E3%82%A2%E3%83%83%E3%83%97%E3%81%A7%E3%82%8F%E3%81%8B%E3%82%8B%EF%BC%81%E3%83%89%E3%83%A1%E3%82%A4%E3%83%B3%E9%A7%86%E5%8B%95%E8%A8%AD%E8%A8%88%E3%81%AE%E5%9F%BA%E6%9C%AC-%E6%88%90%E7%80%AC-%E5%85%81%E5%AE%A3-ebook/dp/B082WXZVPC?__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A&crid=2SPIX3DU2EUW2&keywords=%E3%83%89%E3%83%A1%E3%82%A4%E3%83%B3%E9%A7%86%E5%8B%95%E8%A8%AD%E8%A8%88%E5%85%A5%E9%96%80&qid=1686451938&sprefix=%E3%83%89%E3%83%A1%E3%82%A4%E3%83%B3%E9%A7%86%E5%8B%95%E8%A8%AD%E8%A8%88%E3%81%AB%E3%82%85%E3%81%86%E3%82%82n%2Caps%2C700&sr=8-1&linkCode=ll1&tag=reirev0e-22&linkId=921753cd089b48613204b35f1d241358&language=ja_JP&ref_=as_li_ss_tl)のユーザー作成処理のテストを作成してみましょう。
 
-まず、以下のコマンドで`UserTest.php`を作成します。
+以下のコマンドで`UserTest.php`を作成します。
 
 ```bash
 php artisan make:test UserTest
 ```
 
 作成された`tests/Feature/UserTest.php`を以下のように編集します。
+書籍に加えて、必要そうなテストを追加で作成しています。
 
 ```php:tests/Feature/UserTest.php
 <?php
@@ -114,34 +226,47 @@ use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
 
 use App\Models\User;
-use App\Services\UserService;
+use App\ValueObjects\UserName;
+
+use Exception;
 
 class UserTest extends TestCase
 {
     use RefreshDatabase;
-    /**
-     * A basic feature test example.
-     */
+
     public function test_user_create(): void
     {
-        $reirev = new User(['name' => 'Rei Rev']);
-        $reirev->save();
+        $username = new UserName('ReiRev');
+        $user = User::create(['username' => $username]);
 
-        $head = User::find(1)->get()->first();
+        $head = User::first();
 
-        $this->assertEquals($head['name'], 'Rei Rev');
+        $this->assertEquals($user['username'], 'ReiRev');
+        $this->assertEquals($head['username'], 'ReiRev');
+    }
+
+    public function test_duplicate_user_create(): void
+    {
+        $username = new UserName('ReiRev');
+        $user = User::create(['username' => $username]);
+        $this->expectException(Exception::class);
+        $user = User::create(['username' => $username]);
     }
 }
+
+
 ```
 
-`use RefreshDatabase;`をクラス内に記述しておくことで、テストごとに[データベースがリセットされます](https://laravel.com/docs/10.x/database-testing#resetting-the-database-after-each-test)。
+`use RefreshDatabase;`をクラス内に記述しておくことで、各テストごとに、すなわち各テストの関数の実行ごとに[データベースがリセットされます](https://laravel.com/docs/10.x/database-testing#resetting-the-database-after-each-test)。
+
 
 以下でテストを実行し、問題なくテストが動作することを確認します。
 
 ```bash
-php artisan make:test UserTest
+php artisan make:test
 ```
 
 ## 参考文献
 
 - [Config Laravel to run phpunit test with SQLite Database](https://5balloons.info/config-laravel-run-phpunit-test-sqlite-database/)
+- [How do I test for multiple exceptions with PHPUnit?](https://stackoverflow.com/questions/1593834/how-do-i-test-for-multiple-exceptions-with-phpunit)
